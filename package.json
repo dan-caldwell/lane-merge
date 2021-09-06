@@ -1,0 +1,20 @@
+{
+  "name": "lane-merge",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "postcss --use autoprefixer -o lib/output.html src/*.css"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/cli": "^7.14.8",
+    "@babel/core": "^7.15.0"
+  },
+  "dependencies": {
+    "postcss": "8.1.0"
+  }
+}
