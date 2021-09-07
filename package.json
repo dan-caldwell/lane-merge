@@ -5,16 +5,20 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "postcss --use autoprefixer -o lib/output.html src/*.css"
+    "buildPostCss": "postcss --use autoprefixer -o lib/output.html src/*.css",
+    "build": "npx ts-node ./plugins/plugin.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@babel/cli": "^7.14.8",
-    "@babel/core": "^7.15.0"
+    "@babel/core": "^7.15.0",
+    "@types/node": "^16.7.11"
   },
   "dependencies": {
-    "postcss": "8.1.0"
+    "postcss": "8.1.0",
+    "ts-node": "^10.2.1",
+    "typescript": "^4.4.2"
   }
 }
