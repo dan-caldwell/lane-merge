@@ -1,3 +1,5 @@
+$my-var: red;
+
 body {
 	background: orange;
 	div.blue {
@@ -7,11 +9,9 @@ body {
   	.h1.my-awesome-class {
     	font-size: 1rem;
       	font-family: sans;
-        text: Hello world!;
-        [title]: My awesome title;
       
       	small.h2 {
-        	color: green;
+        	color: $my-var;
       	}
   	}
 }

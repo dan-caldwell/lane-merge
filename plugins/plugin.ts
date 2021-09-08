@@ -1,10 +1,22 @@
 import * as postcss from 'postcss';
 import util from 'util';
 import fs from 'fs';
+import sass from 'node-sass';
+import path from 'path';
 
 const readFile = util.promisify(fs.readFile);
 const writeFile = util.promisify(fs.writeFile);
 const readdir = util.promisify(fs.readdir);
+
+const getCssFromSass = async () => {
+    const sassContents = await readFile(path.join(__dirname, '../src/index.scss'), "utf8");
+    const result = sass.renderSync({
+        data: sassContents
+    });
+    console.log(result.css.toString());
+}
+getCssFromSass();
+
 
 class ZipperMerge {
 
@@ -58,11 +70,21 @@ const htmlFromSelector = (selector: string, traversal: string, innerText: string
 const root: postcss.Root = postcss.parse(css, {});
 
 // Get the styles of the declaration
-const getStyles = (node: postcss.Rule): string => 
+const getStyles = (node: postcss.Rule, filterInvalidDecls: boolean): string => 
     node.nodes
-    .filter(node => node.type === "decl" && node.prop !== "text") // Only include declarations, exclude text declarations
+    .filter((node: any) => {
+        if (filterInvalidDecls && node.type === "decl") {
+            // List of declarations to find
+            const filterProps = [
+                { key: 'text', exact: true }, 
+                { key: ']', exact: false }
+            ];
+            const inFilter = filterProps.find(item => item.exact ? item.key === node.prop : node.prop.includes(item.key));
+            return !inFilter;
+        } else return node.type === "decl";
+    }) // Only include declarations, exclude text declarations
     .map(decl => decl.toString() + ";") // Convert declarations to CSS strings
-    .join(''); // Join declarations to string
+    .join('\n\t'); // Join declarations to string
 
 const getTextDeclaration = (node: postcss.Rule) => 
     node.nodes
@@ -71,28 +93,26 @@ const getTextDeclaration = (node: postcss.Rule) =>
 
 const traverse = (obj: postcss.Rule | postcss.Root, outputType: 'html' | 'css') => {
     let contents = "\n";
-
-    switch (outputType) {
-        case 'html':
-            break;
-            
-        case 'css':
-            break;
-    }
-
-
     if (obj.nodes) {
         for (const node of obj.nodes) {
             switch (outputType) {
                 case 'html':
-                    if (node.type === "rule" && node.selector) {
+                    if (node.type === "rule") {
                         const text = getTextDeclaration(node)[0] || '';
                         contents += htmlFromSelector(node.selector, traverse(node, outputType), text);
                     }
                     break;
                 case 'css':
-                    if (node.type === "decl") {
-                        contents += node.toString() + ';\n';
+                    if (node.type === "rule") {
+                        const nodeRef: any = node;
+                        if (node.parent?.type === "rule") {
+                            const parentNode: any = node.parent;
+                            const parent = parentNode.selector || "";
+                            nodeRef.parentId = parentNode.parentId ? parentNode.parentId + ' ' + parent : parent;
+                        }
+                        const style = getStyles(node, true);
+                        contents += `${nodeRef.parentId || ''} ${node.selector} {\n\t${style}\n}`;
+                        contents += traverse(node, outputType);
                     }
                     break;
             }
@@ -103,4 +123,4 @@ const traverse = (obj: postcss.Rule | postcss.Root, outputType: 'html' | 'css') 
 
 const htmlOutput = traverse(root, 'html');
 const cssOutput = traverse(root, 'css');
-console.log(cssOutput);
+//console.log(cssOutput);
