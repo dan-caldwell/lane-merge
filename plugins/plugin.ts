@@ -1,7 +1,7 @@
 import * as postcss from 'postcss';
 import util from 'util';
 import fs from 'fs';
-import sass from 'node-sass';
+import sass from 'sass';
 import path from 'path';
 
 const readFile = util.promisify(fs.readFile);
@@ -11,22 +11,108 @@ const readdir = util.promisify(fs.readdir);
 const getCssFromSass = async () => {
     const sassContents = await readFile(path.join(__dirname, '../src/index.scss'), "utf8");
     const result = sass.renderSync({
-        data: sassContents
+        data: sassContents,
     });
-    console.log(result.css.toString());
+    //console.log(result.css.toString());
 }
-getCssFromSass();
 
 
 class ZipperMerge {
+    inputPath: string = "../src";
 
     constructor() {
-        
+        this.init();
     }
 
+    async init() {
+        //const css = await this.getCssFromSass();
+        const sassObj = await this.getSass();
 
+        console.log(sassObj);
+    }
+
+    // Gets all file paths in a directory
+    async getAllFilePaths(dirPath: string, arrayOfFiles: string[] | null): Promise<string[]> {
+        let files: string[] = [];
+        try {
+            files = await readdir(dirPath);
+        } catch (err) {
+            console.error('Cannot read directory', err);
+            return files;
+        }
+        arrayOfFiles = arrayOfFiles || [];
+        for (const file of files) {
+            if (fs.statSync(dirPath + "/" + file).isDirectory()) {
+                arrayOfFiles = await this.getAllFilePaths(dirPath + "/" + file, arrayOfFiles);
+            } else {
+                arrayOfFiles.push(path.join(dirPath, "/", file));
+            }
+        }
+        return arrayOfFiles;
+    }
+
+    async getSass() {
+        const filePaths = await this.getAllFilePaths(path.join(__dirname, this.inputPath), null);
+        return await this.createObjFromFiles(filePaths);
+    }
+
+    // Read raw SCSS file paths and create an output object based on files
+    async createObjFromFiles(filePaths: string[]) {
+        let dataObjects: postcss.ChildNode[] = [];
+        for (const filePath of filePaths) {
+            try {
+                const contents = await readFile(filePath);
+                const data: postcss.Root = postcss.parse(contents, {});
+                const rules = data.nodes.filter(node => node.type === "rule");
+                if (rules.length) dataObjects = dataObjects.concat(rules);
+            } catch (err) {
+                console.error('Error reading file', err);
+            }
+        }
+        return Object.assign(dataObjects);
+    }
+
+    async sassToPostCss() {
+
+    }
+
+    async getCssFromSass() {
+        const sassContents = await readFile(path.join(__dirname, this.inputPath), "utf8");
+        const result = sass.renderSync({
+            data: sassContents,
+            outputStyle: 'expanded'
+        });
+        return result.css.toString();
+    }
+
+    async createHtmlOutput() {
+
+    }
+
+    // Get list of selectors from CSS rules
+    getSelectors(obj: postcss.Rule | postcss.Root, outputType: 'html' | 'css') {
+        let contents = "\n";
+        if (obj.nodes) {
+            for (const node of obj.nodes) {
+                if (node.type === "rule") {
+                    const nodeRef: any = node;
+                    if (node.parent?.type === "rule") {
+                        const parentNode: any = node.parent;
+                        const parent = parentNode.selector || "";
+                        nodeRef.parentId = parentNode.parentId ? parentNode.parentId + ' ' + parent : parent;
+                    }
+                    const style = getStyles(node, true);
+                    //contents += `${nodeRef.parentId || ''} ${node.selector} {\n\t${style}\n}`;
+                    //contents += this.getSelectors(node, outputType);
+                }
+            }
+        }
+        return contents;
+    }
     
 }
+
+new ZipperMerge();
 
 const css = `
 body {
