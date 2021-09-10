@@ -27,8 +27,8 @@ class ZipperMerge {
     async init() {
         //const css = await this.getCssFromSass();
         const sassObj = await this.getSass();
-
-        console.log(sassObj);
+        const rules = this.getListOfAllRules(sassObj);
+        console.log(rules);
     }
 
     // Gets all file paths in a directory
@@ -72,8 +72,17 @@ class ZipperMerge {
         return Object.assign(dataObjects);
     }
 
-    async sassToPostCss() {
-
+    getListOfAllRules(sassObj: postcss.Rule[]) {
+        let output: any[] = [];
+        this.getParent(sassObj);
+        output = output.concat(sassObj);
+        for (const rule of sassObj) {
+            const filteredRules = rule.nodes.filter(node => node.type === "rule");
+            filteredRules.forEach(filteredRule => this.getParent(filteredRule));
+            output = output.concat(this.getListOfAllRules(filteredRules as postcss.Rule[]));
+            //this.getListOfAllRules(filteredRules as postcss.Rule[]);
+        }
+        return output;
     }
 
     async getCssFromSass() {
@@ -108,6 +117,14 @@ class ZipperMerge {
             }
         }
         return contents;
+    }
+
+    getParent(node: any) {
+        if (node.parent?.type === "rule") {
+            const parentNode: any = node.parent;
+            const parent = parentNode.selector || "";
+            node.parentId = parentNode.parentId ? parentNode.parentId + ' ' + parent : parent;
+        }
     }
     
 }

@@ -1,0 +1,12 @@
+.cool {
+    color: green;
+
+    .awesome.selector {
+        font-size: 100rem;
+
+        .super.cool.selector {
+            font-weight: bold;
+            background: pink;
+        }
+    }
+}
