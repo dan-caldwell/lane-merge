@@ -1,7 +1,7 @@
 import * as postcss from 'postcss';
 import util from 'util';
 import fs from 'fs';
-import sass from 'sass';
+import sass, { render } from 'sass';
 import path from 'path';
 
 const readFile = util.promisify(fs.readFile);
@@ -28,7 +28,36 @@ class ZipperMerge {
         //const css = await this.getCssFromSass();
         const sassObj = await this.getSass();
         const rules = this.getListOfAllRules(sassObj);
-        console.log(rules);
+        const selectors = this.mapRules(rules);
+        const renderedSass = await this.renderSass();
+        const renderedSassObj = this.parseRenderedSass(renderedSass);
+        console.log(selectors);
+    }
+
+    // Map rules to selectors to easily traverse
+    mapRules(rules: any[]) {
+        return rules.map(rule => {
+            const { renderedSelector, selector } = rule;
+            //console.log(rule);
+            return {
+                renderedSelector, selector
+            }
+        });
+    }
+
+    // Parse rendered Sass
+    parseRenderedSass(contents: string) {
+        const data: postcss.Root = postcss.parse(contents, {});
+        return data;
+    }
+
+    // Render SCSS file
+    async renderSass() {
+        const sassContents = await readFile(path.join(__dirname, '../src/index.scss'), "utf8");
+        const result = sass.renderSync({
+            data: sassContents,
+        });
+        return result.css.toString();
     }
 
     // Gets all file paths in a directory
@@ -72,15 +101,19 @@ class ZipperMerge {
         return Object.assign(dataObjects);
     }
 
-    getListOfAllRules(sassObj: postcss.Rule[]) {
+    getListOfAllRules(sassObj: any) {
         let output: any[] = [];
-        this.getParent(sassObj);
-        output = output.concat(sassObj);
         for (const rule of sassObj) {
-            const filteredRules = rule.nodes.filter(node => node.type === "rule");
-            filteredRules.forEach(filteredRule => this.getParent(filteredRule));
+            const filteredRules = rule.nodes.filter((node: postcss.Rule) => node.type === "rule");
+            filteredRules.forEach((filteredRule: any) => {
+                this.getParent(filteredRule);
+                filteredRule.renderedSelector = filteredRule.parentId + " " + filteredRule.selector;
+            });
             output = output.concat(this.getListOfAllRules(filteredRules as postcss.Rule[]));
-            //this.getListOfAllRules(filteredRules as postcss.Rule[]);
+            // Get the parent and renderedSelector
+            this.getParent(rule);
+            rule.renderedSelector = rule.parentId ? rule.parentId + " " + rule.selector : rule.selector;
+            output = output.concat(rule);
         }
         return output;
     }
