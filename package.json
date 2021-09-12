@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "buildPostCss": "postcss --use autoprefixer -o lib/output.html src/*.css",
-    "build": "npx ts-node ./plugins/plugin.ts"
+    "build": "node ./plugins/plugin.js"
   },
   "keywords": [],
   "author": "",
