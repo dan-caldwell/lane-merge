@@ -1,12 +1,14 @@
+@import 'src/cool.scss';
+
 $my-var: red;
 $text: 'Hi there';
 
 body {
 	background: orange;
-	div.blue {
-    	color: blue;  
-  	}
-  
+	div.blue { color: blue; }
+	
+	@include cool;
+
   	.h1.my-awesome-class {
     	font-size: 1rem;
       	font-family: sans;

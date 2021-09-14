@@ -1,21 +1,15 @@
 const postcss = require('postcss');
 const util = require('util');
 const fs = require('fs');
-const sass = require('sass');
+const sass = require('node-sass');
 const path = require('path');
+const pretty = require('pretty');
 
 const readFile = util.promisify(fs.readFile);
 const writeFile = util.promisify(fs.writeFile);
 const readdir = util.promisify(fs.readdir);
 
-const getCssFromSass = async () => {
-    const sassContents = await readFile(path.join(__dirname, '../src/index.scss'), "utf8");
-    const result = sass.renderSync({
-        data: sassContents,
-    });
-    //console.log(result.css.toString());
-}
-
+const postcssSass = require('postcss-sass');
 
 class ZipperMerge {
     inputPath = "../src";
@@ -26,28 +20,46 @@ class ZipperMerge {
 
     async init() {
         //const css = await this.getCssFromSass();
-        const sassObj = await this.getSass();
-        const rules = this.getListOfAllRules(sassObj);
-        const selectors = this.mapRules(rules);
+        //const sassObj = await this.getSass();
+        //const rules = this.getListOfAllRules(sassObj);
+        //const selectors = this.mapRules(rules);
         const renderedSass = await this.renderSass();
-        const renderedSassObj = this.parseRenderedSass(renderedSass);
-        const formattedSelectorArray = this.addNodesToSelectorsArray(selectors, renderedSassObj);
-        const tree = this.createTreeFromFlatArray(formattedSelectorArray);
-        const objTree = {
-            node: {
-                childNodes: tree
-            }
-        }
-        const output = this.traverse(objTree);
+        const cleanedSass = this.scssToSass(renderedSass);
+
+        //const sassContents = await readFile(path.join(__dirname, './src/index.scss'), "utf8");
+        const postCssOutput = postcssSass.parse(cleanedSass);
+        const output = this.traverse(postCssOutput);
+
         console.log(output);
-        //console.dir(tree, { depth: null});
+
+        return;
+        // const renderedSassObj = this.parseRenderedSass(renderedSass);
+        // const formattedSelectorArray = this.addNodesToSelectorsArray(selectors, renderedSassObj);
+        // const tree = this.createTreeFromFlatArray(formattedSelectorArray);
+        // const objTree = {
+        //     node: {
+        //         childNodes: tree
+        //     }
+        // }
+        // const output = this.traverse(objTree);
+        // const formatted = pretty(output);
+    }
+
+    scssToSass(string) {
+        return string.replace(/{/g, '').replace(/}/g, '').replace(/;/g, '');
+    }
+
+    createTree(inputString) {
+        const lines = inputString.split('\n');
+        
     }
 
     traverse(obj) {
         let contents = "\n";
-        if (obj.node.childNodes) {
-            for (const node of obj.node.childNodes) {
-                const text = this.getTextDeclaration(node.node)[0] || '';
+        if (obj.nodes) {
+            console.log(obj.nodes);
+            for (const node of obj.nodes) {
+                const text = this.getTextDeclaration(node)[0] || '';
                 contents += this.htmlFromSelector(node.selector, this.traverse(node), text);
             }
         }
@@ -123,14 +135,15 @@ class ZipperMerge {
     // Parse rendered Sass
     parseRenderedSass(contents) {
         const data = postcss.parse(contents, {});
-        return data.nodes || [];
+        return data;
     }
 
     // Render SCSS file
     async renderSass() {
-        const sassContents = await readFile(path.join(__dirname, '../src/index.scss'), "utf8");
+        const sassContents = await readFile(path.join(__dirname, './src/index.scss'), "utf8");
         const result = sass.renderSync({
             data: sassContents,
+            outputStyle: 'nested'
         });
         return result.css.toString();
     }
