@@ -1,1 +1,2 @@
-[ ] Parse input SCSS file to remove invalid props (text, [title], etc.), then render that output with node-sass to use as the stylesheet
+[√] Parse input SCSS file to remove invalid props (text, [title], etc.), then render that output with node-sass to use as the stylesheet
+[ ] If the element has no declarations, it will not render
