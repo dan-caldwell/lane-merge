@@ -1,3 +1,4 @@
+@import 'src/classes.scss';
 @import 'src/cool.scss';
 
 $my-var: red;
@@ -13,28 +14,32 @@ $text: 'Hi there';
 		a {
 			-href: 'https://google.com';
 			-aria-label: 'My awesome link to Google';
+			text: 'a tag text';
 	
 			h1 {
+				background: pink;
 				text: "Inner HTML";
 			}
 		}
 	
-		  .h1.my-awesome-class {
+		.h1.my-awesome-class {
 			font-size: 1rem;
-			  font-family: sans;
+			font-family: sans;
 			text: $text;
 			-title: 123;
 		  
-			  small.h2 {
+			small.h2 {
 				color: $my-var;
-			  }
-		  }
+				text: "Small text";
+			}
+		}
 	}
 }
 
 html {
 	head {
 		link {
+			-rel: "stylesheet";
 			-href: "index.css";
 		}
 	}

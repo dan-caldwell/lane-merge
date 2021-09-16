@@ -9,6 +9,9 @@ const readFile = util.promisify(fs.readFile);
 const writeFile = util.promisify(fs.writeFile);
 const readdir = util.promisify(fs.readdir);
 
+// Modify raw SCSS
+const postcssScss = require('postcss-scss');
+// Modify raw Sass
 const postcssSass = require('postcss-sass');
 
 class ZipperMerge {
@@ -19,18 +22,76 @@ class ZipperMerge {
     }
 
     async init() {
-        const renderedSass = await this.renderSass();
+        const sassContents = await this.getSassContents();
+        const parsedScss = postcssScss.parse(sassContents);
+
+        // Insert the filler attributes for empty rules
+        this.fillerDeclForEmptyNodes(parsedScss);
+
+        const sassContentsWithFillers = parsedScss.toString();
+
+        const renderedSass = await this.renderSass(sassContentsWithFillers);
         const cleanedSass = this.scssToSass(renderedSass);
-        const postCssOutput = postcssSass.parse(cleanedSass);
-        const html = this.traverse(postCssOutput);
+        const parsedSass = postcssSass.parse(cleanedSass);
+
+        this.removeFillers(parsedSass);
+
+        const html = this.traverse(parsedSass);
         const prettyHtml = pretty(html);
 
-        console.log(cleanedSass);
+        // Remove text and attribute declarations
+        this.removeInvalidDecls(parsedSass);
 
+        const finalRenderedSass = await this.renderSass(parsedSass.toString());
+        
         if (!fs.existsSync(path.join(__dirname, './build'))) fs.mkdirSync(path.join(__dirname, './build'));
         await writeFile(path.join(__dirname, './build/index.html'), prettyHtml);
-        await writeFile(path.join(__dirname, './build/index.css'), renderedSass);
+        await writeFile(path.join(__dirname, './build/index.css'), finalRenderedSass);
         return;
+    }
+
+    removeInvalidDecls(obj) {
+        if (obj.nodes) {
+            for (const node of obj.nodes) {
+                if (node.type === "rule") {
+                    const invalidDecls = node.nodes.filter(innerNode => innerNode.type === "decl" && (innerNode.prop === "text" || innerNode.prop.charAt(0) === "-"));
+                    invalidDecls.forEach(decl => decl.remove());
+                    this.removeInvalidDecls(node);
+                }
+            }
+        }
+    }
+
+    removeFillers(obj) {
+        if (obj.nodes) {
+            for (const node of obj.nodes) {
+                if (node.type === "rule") {
+                    const fillerDecls = node.nodes.filter(innerNode => innerNode.type === "decl" && innerNode.prop === "__FILLER__");
+                    fillerDecls.forEach(decl => decl.remove());
+                    const splitSelector = node.selector.split(' ');
+                    const singleSelector = splitSelector[splitSelector.length - 1];
+                    node.selector = singleSelector;
+                    this.removeFillers(node);
+                }
+            }
+        }
+    }
+
+    fillerDeclForEmptyNodes(obj) {
+        if (obj.nodes) {
+            for (const node of obj.nodes) {
+                if (node.type === "rule") {
+                    const isEmptyRule = node.nodes.filter(innerNode => innerNode.type === "decl").length === 0;
+                    if (isEmptyRule) {
+                        node.append({
+                            prop: '__FILLER__',
+                            value: '_'
+                        });
+                    }
+                    this.fillerDeclForEmptyNodes(node);
+                }
+            }
+        }
     }
 
     scssToSass(string) {
@@ -91,9 +152,12 @@ class ZipperMerge {
         return arr;
     }
 
+    async getSassContents() {
+        return await readFile(path.join(__dirname, './src/index.scss'), "utf8");
+    }
+
     // Render SCSS file
-    async renderSass() {
-        const sassContents = await readFile(path.join(__dirname, './src/index.scss'), "utf8");
+    async renderSass(sassContents) {
         const result = sass.renderSync({
             data: sassContents,
             outputStyle: 'nested'
