@@ -4,38 +4,6 @@
 $my-var: red;
 $text: 'Hi there';
 
-@mixin body {
-	body {
-		background: orange;
-		div.blue { color: blue; }
-		
-		@include cool;
-	
-		a {
-			-href: 'https://google.com';
-			-aria-label: 'My awesome link to Google';
-			text: 'a tag text';
-	
-			h1 {
-				background: pink;
-				text: "Inner HTML";
-			}
-		}
-	
-		.h1.my-awesome-class {
-			font-size: 1rem;
-			font-family: sans;
-			text: $text;
-			-title: 123;
-		  
-			small.h2 {
-				color: $my-var;
-				text: "Small text";
-			}
-		}
-	}
-}
-
 html {
 	head {
 		link {
@@ -43,5 +11,30 @@ html {
 			-href: "index.css";
 		}
 	}
-	@include body;
+	body {
+		background: #f5f6f9;
+		.container {
+			background: #fff;
+			width: 80rem;
+			margin: auto;
+			.navbar {
+				display: flex;
+				justify-content: space-between;
+				.left {
+					.nav-item {
+						text: "Home";
+					}
+				}
+				.right {
+					.nav-item {
+						text: "About";
+					}
+				}
+			}
+		}
+	}
+}
+
+.nav-item {
+	font-weight: bold;
 }

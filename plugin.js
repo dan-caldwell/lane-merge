@@ -4,6 +4,7 @@ const fs = require('fs');
 const sass = require('node-sass');
 const path = require('path');
 const pretty = require('pretty');
+const cssbeautify = require('cssbeautify');
 
 const readFile = util.promisify(fs.readFile);
 const writeFile = util.promisify(fs.writeFile);
@@ -16,10 +17,6 @@ const postcssSass = require('postcss-sass');
 
 class ZipperMerge {
     inputPath = "../src";
-
-    constructor() {
-        this.init();
-    }
 
     async init() {
         const sassContents = await this.getSassContents();
@@ -34,20 +31,30 @@ class ZipperMerge {
         const cleanedSass = this.scssToSass(renderedSass);
         const parsedSass = postcssSass.parse(cleanedSass);
 
-        this.removeFillers(parsedSass);
+        const parsedSassAtHtmlSelector = this.getHtmlSelectorStart(parsedSass);
 
-        const html = this.traverse(parsedSass);
+        // Remove filler declarations
+        this.removeFillers(parsedSassAtHtmlSelector);
+
+        const html = this.traverse(parsedSassAtHtmlSelector);
         const prettyHtml = pretty(html);
 
         // Remove text and attribute declarations
-        this.removeInvalidDecls(parsedSass);
+        this.removeInvalidDecls(parsedSassAtHtmlSelector);
 
         const finalRenderedSass = await this.renderSass(parsedSass.toString());
+        const prettyCss = cssbeautify(finalRenderedSass.toString());
         
         if (!fs.existsSync(path.join(__dirname, './build'))) fs.mkdirSync(path.join(__dirname, './build'));
         await writeFile(path.join(__dirname, './build/index.html'), prettyHtml);
-        await writeFile(path.join(__dirname, './build/index.css'), finalRenderedSass);
-        return;
+        await writeFile(path.join(__dirname, './build/index.css'), prettyCss);
+        console.log('ZipperMerge built');
+    }
+
+    getHtmlSelectorStart(parsedSass) {
+        const nodes = parsedSass.nodes;
+        const htmlNodes = nodes.filter(node => node.type === "rule" && node.selector === "html");
+        return htmlNodes.length ? { nodes: [htmlNodes[htmlNodes.length - 1]] } : null
     }
 
     removeInvalidDecls(obj) {
@@ -187,23 +194,9 @@ class ZipperMerge {
 
 }
 
-new ZipperMerge();
+const zipperMerge = async () => {
+    const zm = new ZipperMerge();
+    await zm.init();
+}
 
-//const root = postcss.parse(css, {});
-
-// Get the styles of the declaration
-const getStyles = (node, filterInvalidDecls) =>
-    node.nodes
-        .filter((node) => {
-            if (filterInvalidDecls && node.type === "decl") {
-                // List of declarations to find
-                const filterProps = [
-                    { key: 'text', exact: true },
-                    { key: ']', exact: false }
-                ];
-                const inFilter = filterProps.find(item => item.exact ? item.key === node.prop : node.prop.includes(item.key));
-                return !inFilter;
-            } else return node.type === "decl";
-        }) // Only include declarations, exclude text declarations
-        .map(decl => decl.toString() + ";") // Convert declarations to CSS strings
-        .join('\n\t'); // Join declarations to string
+module.exports = zipperMerge;
