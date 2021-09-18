@@ -1,8 +1,5 @@
-@import 'src/classes.scss';
-@import 'src/cool.scss';
-
-$my-var: red;
-$text: 'Hi there';
+$bg: #f5f6f9;
+$text: "Hello World";
 
 html {
 	head {
@@ -12,29 +9,12 @@ html {
 		}
 	}
 	body {
-		background: #f5f6f9;
-		.container {
-			background: #fff;
-			width: 80rem;
-			margin: auto;
-			.navbar {
-				display: flex;
-				justify-content: space-between;
-				.left {
-					.nav-item {
-						text: "Home";
-					}
-				}
-				.right {
-					.nav-item {
-						text: "About";
-					}
-				}
+		background: $bg;
+		a {
+			-href: "https://google.com";
+			h1 {
+				text: $text;
 			}
 		}
 	}
-}
-
-.nav-item {
-	font-weight: bold;
 }

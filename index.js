@@ -5,21 +5,22 @@ const sass = require('node-sass');
 const path = require('path');
 const pretty = require('pretty');
 const cssbeautify = require('cssbeautify');
-
-const readFile = util.promisify(fs.readFile);
-const writeFile = util.promisify(fs.writeFile);
-const readdir = util.promisify(fs.readdir);
-
 // Modify raw SCSS
 const postcssScss = require('postcss-scss');
 // Modify raw Sass
 const postcssSass = require('postcss-sass');
 
-class ZipperMerge {
-    inputPath = "../src";
+const readFile = util.promisify(fs.readFile);
+const writeFile = util.promisify(fs.writeFile);
+const readdir = util.promisify(fs.readdir);
 
-    async init() {
-        const sassContents = await this.getSassContents();
+class ZipperMerge {
+
+    async init(inputPath, outputFolder) {
+        if (!inputPath) inputPath = path.join(__dirname, './src/index.scss');
+        if (!outputFolder) outputFolder = "./build";
+
+        const sassContents = await readFile(inputPath, "utf8");
         const parsedScss = postcssScss.parse(sassContents);
 
         // Insert the filler attributes for empty rules
@@ -45,10 +46,9 @@ class ZipperMerge {
         const finalRenderedSass = await this.renderSass(parsedSass.toString());
         const prettyCss = cssbeautify(finalRenderedSass.toString());
         
-        if (!fs.existsSync(path.join(__dirname, './build'))) fs.mkdirSync(path.join(__dirname, './build'));
-        await writeFile(path.join(__dirname, './build/index.html'), prettyHtml);
-        await writeFile(path.join(__dirname, './build/index.css'), prettyCss);
-        console.log('ZipperMerge built');
+        if (!fs.existsSync(path.join(__dirname, outputFolder))) fs.mkdirSync(path.join(__dirname, outputFolder));
+        await writeFile(path.join(__dirname, `${outputFolder}/index.html`), prettyHtml);
+        await writeFile(path.join(__dirname, `${outputFolder}/index.css`), prettyCss);
     }
 
     getHtmlSelectorStart(parsedSass) {
@@ -159,10 +159,6 @@ class ZipperMerge {
         return arr;
     }
 
-    async getSassContents() {
-        return await readFile(path.join(__dirname, './src/index.scss'), "utf8");
-    }
-
     // Render SCSS file
     async renderSass(sassContents) {
         const result = sass.renderSync({
@@ -194,9 +190,9 @@ class ZipperMerge {
 
 }
 
-const zipperMerge = async () => {
+const zipperMerge = async (inputPath, outputFolder) => {
     const zm = new ZipperMerge();
-    await zm.init();
+    await zm.init(inputPath, outputFolder);
 }
 
 module.exports = zipperMerge;

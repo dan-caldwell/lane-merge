@@ -1,5 +1,4 @@
-const chokidar = require('chokidar');
-const zipperMerge = require('./plugin');
+const zipperMerge = require('.');
 const express = require('express');
 const path = require('path');
 const app = express();

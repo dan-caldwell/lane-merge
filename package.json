@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "buildPostCss": "postcss --use autoprefixer -o lib/output.html src/*.css",
-    "build": "node ./plugin.js",
+    "build": "node ./index.js",
     "dev": "nodemon -e scss --watch src start.js"
   },
   "keywords": [],
@@ -20,7 +19,6 @@
     "@types/sass": "^1.16.1"
   },
   "dependencies": {
-    "chokidar": "^3.5.2",
     "cssbeautify": "^0.3.1",
     "express": "^4.17.1",
     "node-sass": "^6.0.1",
@@ -29,7 +27,6 @@
     "postcss-sass": "^0.5.0",
     "postcss-scss": "^4.0.0",
     "pretty": "^2.0.0",
-    "sass": "^1.39.0",
     "scss-parser": "^1.0.5"
   }
 }
