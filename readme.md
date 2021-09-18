@@ -21,15 +21,19 @@ zipperMerge is an async function that takes an inputPath and an outputFolder
 
 To create an element, create a selector
 
-```h2 {
+```
+h2 {
     color: blue;
-}```
+}
+```
 
 If you don't have an element at the start and just use a class or ID selector, the element will be a div.
 
-```.example {
+```
+.example {
     text: "This element is a div";
-}```
+}
+```
 
 - Add text to the element
 
@@ -39,6 +43,8 @@ You can add text with the "text" property. Make sure to put your text between qu
 
 You can add an attribute to your element by starting your property with a hyphen (-).
 
-```a.example {
+```
+a.example {
     -href: "https://google.com";
-}```
+}
+```
