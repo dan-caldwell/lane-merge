@@ -2,6 +2,35 @@
 
 This is a library for turning a SCSS stylesheet into HTML and CSS. Merge your CSS and HTML into one file for a simpler markup writing experience.
 
+## Example
+
+```
+$bg: #f5f6f9;
+$text: "Hello World";
+
+html {
+	head {
+		link {
+			-rel: "stylesheet";
+			-href: "index.css";
+		}
+	}
+	body {
+		background: $bg;
+		a {
+			-href: "https://google.com";
+			h1 {
+				text: $text;
+			}
+		}
+	}
+}
+
+a {
+    text-decoration: none;
+}
+```
+
 ## Getting started
 
 1. Create an index.scss file in /src
@@ -17,7 +46,7 @@ zipperMerge is an async function that takes an inputPath and an outputFolder
 
 ## API
 
-- Create an element
+### Create an element
 
 To create an element, create a selector
 
@@ -35,11 +64,11 @@ If you don't have an element at the start and just use a class or ID selector, t
 }
 ```
 
-- Add text to the element
+### Add text to the element
 
 You can add text with the "text" property. Make sure to put your text between quotes.
 
-- Add an attribute
+### Add an attribute
 
 You can add an attribute to your element by starting your property with a hyphen (-).
 
