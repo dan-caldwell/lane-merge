@@ -1,0 +1,24 @@
+$bg: #f5f6f9;
+$text: "Hello World";
+
+html {
+	head {
+		link {
+			-rel: "stylesheet";
+			-href: "index.css";
+		}
+	}
+	body {
+		background: $bg;
+		a {
+			-href: "https://google.com";
+			h1 {
+				text: $text;
+			}
+		}
+	}
+}
+
+a {
+    text-decoration: none;
+}
